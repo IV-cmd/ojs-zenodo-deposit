@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+vendor/
+.env
+.phpunit.cache/
+.phpunit.result.cache
+/ojs/
+/.ojs/

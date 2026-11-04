@@ -1,0 +1,40 @@
+services:
+  ojs:
+    image: pkpofficial/ojs:3_5_0-6@sha256:0c26ece9e6af0c34961edfd2a187c5dc175ef5432b3d16d7c072de5d62d2c3f9
+    user: "0:0"
+    ports:
+      - "8080:80"
+    environment:
+      PKP_CONF: /var/www/ojs-config/config.inc.php
+      SERVERNAME: localhost
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ojs_config:/var/www/ojs-config
+      - ojs_files:/var/www/files
+      - ojs_public:/var/www/html/public
+      - ./:/var/www/html/plugins/generic/zenodoDeposit
+      - ./docker/ojs/start.sh:/opt/ojs-dev/start.sh:ro
+    command: ["/bin/sh", "/opt/ojs-dev/start.sh"]
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ojs
+      MYSQL_USER: ojs
+      MYSQL_PASSWORD: ${OJS_DB_PASSWORD:-ojs_dev_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ojs_root_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  ojs_config:
+  ojs_files:
+  ojs_public:
+  mysql_data:
