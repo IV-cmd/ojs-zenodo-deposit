@@ -3,6 +3,7 @@ parameters:
     paths:
         - ZenodoDepositPlugin.php
         - index.php
+        - classes
         - tests
     scanFiles:
         - tests/stubs/pkp.php
