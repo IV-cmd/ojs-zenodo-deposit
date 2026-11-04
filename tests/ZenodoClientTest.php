@@ -104,7 +104,24 @@ class ZenodoClientTest extends TestCase
         );
 
         self::assertSame(0, $exception->getStatusCode());
-        self::assertStringContainsString('different scheme or host', $exception->getMessage());
+        self::assertStringContainsString('different origin', $exception->getMessage());
+        self::assertCount(1, $transport->calls);
+        self::assertSame('GET', $transport->calls[0]['method']);
+    }
+
+    public function testUploadRejectsBucketOnDifferentPortWithoutSendingPut(): void
+    {
+        $transport = new FakeTransport([
+            new HttpResponse(200, '{"links":{"bucket":"https://sandbox.zenodo.org:8443/api/files/18"}}'),
+        ]);
+        $client = new ZenodoClient(self::BASE_URL, self::TOKEN, $transport);
+
+        $exception = $this->captureApiException(
+            fn (): array => $client->uploadFile(18, 'paper.pdf', 'contents')
+        );
+
+        self::assertSame(0, $exception->getStatusCode());
+        self::assertStringContainsString('different origin', $exception->getMessage());
         self::assertCount(1, $transport->calls);
         self::assertSame('GET', $transport->calls[0]['method']);
     }

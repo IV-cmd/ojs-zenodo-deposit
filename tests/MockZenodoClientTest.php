@@ -24,6 +24,12 @@ class MockZenodoClientTest extends TestCase
         self::assertSame('10.5072/zenodo.12345', $draft['metadata']['prereserve_doi']['doi']);
         self::assertSame(12345, $draft['metadata']['prereserve_doi']['recid']);
         self::assertStringContainsString('.invalid', $draft['links']['bucket']);
+        self::assertSame(
+            'https://zenodo.mock.invalid/api/deposit/depositions/12345/actions/edit',
+            $draft['links']['edit']
+        );
+        self::assertSame('https://zenodo.mock.invalid/deposit/12345', $draft['links']['html']);
+        self::assertSame('https://zenodo.mock.invalid/deposit/12345', $draft['links']['latest_draft_html']);
         self::assertArrayHasKey('self', $draft['links']);
         self::assertArrayHasKey('publish', $draft['links']);
         self::assertArrayHasKey('html', $draft['links']);

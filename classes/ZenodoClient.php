@@ -68,7 +68,7 @@ final class ZenodoClient implements ZenodoClientInterface
 
         if (!$this->hasSameOrigin($bucket)) {
             throw $this->exception(
-                'Zenodo API refused an upload because links.bucket has a different scheme or host',
+                'Zenodo API refused an upload because links.bucket has a different origin',
                 0,
                 ''
             );
@@ -165,9 +165,24 @@ final class ZenodoClient implements ZenodoClientInterface
             return false;
         }
 
-        return strtolower($base['scheme'] ?? '') === strtolower($candidate['scheme'] ?? '')
+        $baseScheme = strtolower($base['scheme'] ?? '');
+        $candidateScheme = strtolower($candidate['scheme'] ?? '');
+        $basePort = $base['port'] ?? match ($baseScheme) {
+            'https' => 443,
+            'http' => 80,
+            default => null,
+        };
+        $candidatePort = $candidate['port'] ?? match ($candidateScheme) {
+            'https' => 443,
+            'http' => 80,
+            default => null,
+        };
+
+        return $baseScheme === $candidateScheme
             && strtolower($base['host'] ?? '') === strtolower($candidate['host'] ?? '')
-            && ($base['host'] ?? '') !== '';
+            && ($base['host'] ?? '') !== ''
+            && $basePort !== null
+            && $basePort === $candidatePort;
     }
 
     private function pathFromUrl(string $url): string
