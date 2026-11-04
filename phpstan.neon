@@ -1,0 +1,8 @@
+parameters:
+    level: 5
+    paths:
+        - ZenodoDepositPlugin.php
+        - index.php
+        - tests
+    scanFiles:
+        - tests/stubs/pkp.php

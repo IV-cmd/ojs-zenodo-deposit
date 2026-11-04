@@ -1,0 +1,33 @@
+{
+    "name": "iv-cmd/ojs-zenodo-deposit",
+    "description": "OJS generic plugin skeleton for Zenodo deposit",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0",
+        "squizlabs/php_codesniffer": "^3.0"
+    },
+    "autoload-dev": {
+        "classmap": [
+            "ZenodoDepositPlugin.php"
+        ],
+        "psr-4": {
+            "ZenodoDeposit\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.0"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "analyse": "phpstan analyse --no-progress"
+    }
+}
