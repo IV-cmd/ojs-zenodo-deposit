@@ -76,6 +76,7 @@ final class ZenodoClient implements ZenodoClientInterface
 
         $url = rtrim($bucket, '/') . '/' . rawurlencode($filename);
 
+        // TODO: Verify upload PUT success status and required Content-Type against live sandbox.
         return $this->request(
             'PUT',
             $this->pathFromUrl($url),
@@ -89,6 +90,7 @@ final class ZenodoClient implements ZenodoClientInterface
     {
         $path = self::API_PATH . '/' . $depositionId . '/actions/publish';
 
+        // TODO: Verify whether doi and doi_url are present in the publish 202 response on live sandbox.
         return $this->request('POST', $path, $this->baseUrl . $path);
     }
 

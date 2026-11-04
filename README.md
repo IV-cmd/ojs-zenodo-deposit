@@ -6,8 +6,9 @@ An OJS generic plugin skeleton for Zenodo integration.
 
 [![CI](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml/badge.svg)](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml)
 
-This version registers an installable generic plugin and provides localized
-metadata. It does not deposit content to Zenodo.
+This version registers a generic plugin and includes a standalone Zenodo REST
+client with an offline mock. The client is not connected to OJS workflows; no
+OJS hooks, jobs, or metadata mapping are included.
 
 ## OJS compatibility
 
@@ -58,13 +59,43 @@ mounted at `plugins/generic/zenodoDeposit` in the OJS container.
 Use `make logs`, `make ojs-cli`, and `make down` to inspect and manage the
 development stack.
 
+## Zenodo client
+
+The standalone client supports three modes:
+
+- **Mock** (default) is deterministic, makes no network requests, and needs no
+  Zenodo account.
+- **Sandbox** uses `https://sandbox.zenodo.org`, separate sandbox credentials,
+  and test DOIs with the `10.5072` prefix. Sandbox data can be wiped.
+- **Live** can create real Zenodo records and DOIs. Set `zenodo_base_url`
+  explicitly to `https://zenodo.org` when using live mode.
+
+Configuration is code-level for now; a settings form is not included.
+
+| Key | Default |
+| --- | --- |
+| `zenodo_mode` | `mock` |
+| `zenodo_base_url` | `https://sandbox.zenodo.org` |
+| `zenodo_token` | Empty |
+
+To create a sandbox token, [register at Zenodo Sandbox](https://sandbox.zenodo.org)
+and use [Applications → personal access tokens](https://sandbox.zenodo.org/account/settings/applications/tokens/new/)
+with the `deposit:write` and `deposit:actions` scopes. The sandbox account and
+token are separate from their production counterparts.
+
+**Production `zenodo.org` is never the default, and sandbox mode refuses
+`zenodo.org` and `www.zenodo.org`.**
+
+The client fails fast with typed errors and never retries or sleeps; a future
+queued job will own backoff.
+
 ## Tests and static checks
 
-The unit tests run without an OJS checkout. Test-only stand-ins for the PKP
-plugin base class and translation helper are loaded by the test bootstrap.
-They verify the skeleton's registration, metadata, loader convention, and
-English locale keys. Checks requiring the OJS application bootstrap are
-deferred to later work.
+The offline unit tests run without an OJS checkout. Test-only stand-ins for the
+PKP plugin base class and translation helper are loaded by the test bootstrap.
+The tests cover plugin metadata, the standalone client, its HTTP transport,
+mock, factory, and configuration boundaries. Checks requiring the OJS
+application bootstrap are deferred to later work.
 
 Run the checks locally with PHP 8.2 or newer and Composer:
 

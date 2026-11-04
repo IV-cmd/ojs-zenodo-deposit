@@ -25,6 +25,13 @@ images from `mirror.gcr.io` allowed the local build to continue.
 
 ## M1
 
+The Zenodo deposit endpoints, authentication, resource fields, and error
+shape were checked against `https://developers.zenodo.org` on 2026-11-03.
+Live-sandbox verification remains open for the upload PUT success status and
+required content type, and whether a publish 202 response already contains
+`doi` and `doi_url`. The docs show validation errors as 400; the mock follows
+the requested 422 behavior. Mock links use the reserved `.invalid` host.
+
 ## M2
 
 ## M3
