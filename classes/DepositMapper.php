@@ -15,6 +15,7 @@ final class DepositMapper
      * @param array<string, mixed> $options
      * @return array{
      *     article: array{metadata: array<string, mixed>, files: array<mixed>},
+     *     dataset?: array{metadata: array<string, mixed>, files: array<mixed>},
      *     warnings: list<string>
      * }
      */
@@ -107,14 +108,29 @@ final class DepositMapper
         }
 
         $metadata['access_right'] = 'open';
-
-        return [
+        $fileGroups = $this->partitionFiles($options);
+        $result = [
             'article' => [
                 'metadata' => $metadata,
-                'files' => $this->files($options),
+                'files' => $fileGroups['article'],
             ],
             'warnings' => $warnings,
         ];
+
+        if ($fileGroups['dataset'] !== []) {
+            $result['dataset'] = [
+                'metadata' => $this->datasetMetadata(
+                    $metadata,
+                    $title,
+                    $doi,
+                    $this->articleUrl($options),
+                    $result['warnings']
+                ),
+                'files' => $fileGroups['dataset'],
+            ];
+        }
+
+        return $result;
     }
 
     private function localizedValue(mixed $value, string $primaryLocale, string $fallbackLocale): ?string
@@ -325,11 +341,11 @@ final class DepositMapper
             }
         }
 
-        $articleUrl = $options['articleUrl'] ?? null;
+        $articleUrl = $this->articleUrl($options);
 
-        if (is_string($articleUrl) && trim($articleUrl) !== '') {
+        if ($articleUrl !== null) {
             $identifiers[] = [
-                'identifier' => trim($articleUrl),
+                'identifier' => $articleUrl,
                 'relation' => 'isAlternateIdentifier',
             ];
         }
@@ -342,6 +358,66 @@ final class DepositMapper
         $value = $object->getData($key);
 
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $articleMetadata
+     * @param list<string> $warnings
+     * @return array<string, mixed>
+     */
+    private function datasetMetadata(
+        array $articleMetadata,
+        string $title,
+        ?string $doi,
+        ?string $articleUrl,
+        array &$warnings
+    ): array {
+        $metadata = [
+            'upload_type' => 'dataset',
+            'title' => $title . ' (dataset)',
+            'description' => $articleMetadata['description'],
+            'creators' => $articleMetadata['creators'],
+        ];
+
+        if (isset($articleMetadata['publication_date'])) {
+            $metadata['publication_date'] = $articleMetadata['publication_date'];
+        }
+
+        $metadata['prereserve_doi'] = true;
+
+        if ($doi !== null) {
+            $metadata['related_identifiers'] = [
+                ['identifier' => $doi, 'relation' => 'isSupplementTo'],
+            ];
+        } elseif ($articleUrl !== null) {
+            $metadata['related_identifiers'] = [
+                ['identifier' => $articleUrl, 'relation' => 'isSupplementTo'],
+            ];
+        } else {
+            $warnings[] = 'Dataset not linked to article; link after article deposit (M3).';
+        }
+
+        foreach (['license', 'keywords', 'communities'] as $key) {
+            if (isset($articleMetadata[$key])) {
+                $metadata[$key] = $articleMetadata[$key];
+            }
+        }
+
+        $metadata['access_right'] = 'open';
+
+        return $metadata;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function articleUrl(array $options): ?string
+    {
+        $articleUrl = $options['articleUrl'] ?? null;
+
+        return is_string($articleUrl) && trim($articleUrl) !== ''
+            ? trim($articleUrl)
+            : null;
     }
 
     /**
@@ -384,12 +460,30 @@ final class DepositMapper
 
     /**
      * @param array<string, mixed> $options
-     * @return list<mixed>
+     * @return array{article: list<array<string, mixed>>, dataset: list<array<string, mixed>>}
      */
-    private function files(array $options): array
+    private function partitionFiles(array $options): array
     {
         $files = $options['files'] ?? null;
 
-        return is_array($files) ? array_values($files) : [];
+        $groups = ['article' => [], 'dataset' => []];
+
+        if (!is_array($files)) {
+            return $groups;
+        }
+
+        foreach ($files as $file) {
+            if (!is_array($file)) {
+                continue;
+            }
+
+            if (($file['isDataset'] ?? false) === true) {
+                $groups['dataset'][] = $file;
+            } else {
+                $groups['article'][] = $file;
+            }
+        }
+
+        return $groups;
     }
 }
