@@ -46,7 +46,13 @@ final class DepositMapper
             $publicationLocale
         );
         $description = $this->description($abstract, $title);
-        $creators = $this->creators($publication, $primaryLocale, $publicationLocale);
+        $warnings = [];
+        $creators = $this->creators(
+            $publication,
+            $primaryLocale,
+            $publicationLocale,
+            $warnings
+        );
         $metadata = [
             'upload_type' => 'publication',
             'publication_type' => 'article',
@@ -59,12 +65,16 @@ final class DepositMapper
 
         if ($publicationDate !== null) {
             $metadata['publication_date'] = $publicationDate;
+        } else {
+            $warnings[] = 'Publication date was omitted because datePublished is missing or invalid; '
+                . 'Zenodo will default to today.';
         }
 
         $doi = $this->doi($publication);
 
         if ($doi === null) {
             $metadata['prereserve_doi'] = true;
+            $warnings[] = 'Zenodo will mint a DOI; write-back is M4.';
         } else {
             $metadata['doi'] = $doi;
         }
@@ -79,6 +89,9 @@ final class DepositMapper
 
         if ($license !== null) {
             $metadata['license'] = $license;
+        } else {
+            $warnings[] = 'License is missing or unrecognized; Zenodo will apply its own default '
+                . '(cc-by for publications or cc-zero for datasets).';
         }
 
         $keywords = $this->stringOptions($options, 'keywords');
@@ -100,7 +113,7 @@ final class DepositMapper
                 'metadata' => $metadata,
                 'files' => $this->files($options),
             ],
-            'warnings' => [],
+            'warnings' => $warnings,
         ];
     }
 
@@ -143,11 +156,13 @@ final class DepositMapper
 
     /**
      * @return list<array{name: string, affiliation?: string, orcid?: string}>
+     * @param list<string> $warnings
      */
     private function creators(
         Publication $publication,
         string $primaryLocale,
-        string $publicationLocale
+        string $publicationLocale,
+        array &$warnings
     ): array {
         $authors = $publication->getData('authors');
         $validAuthors = [];
@@ -195,10 +210,13 @@ final class DepositMapper
                 $creator['affiliation'] = $affiliation;
             }
 
-            $orcid = $this->orcid($author->getData('orcid'));
+            $rawOrcid = $author->getData('orcid');
+            $orcid = $this->orcid($rawOrcid);
 
             if ($orcid !== null) {
                 $creator['orcid'] = $orcid;
+            } elseif (is_string($rawOrcid) && trim($rawOrcid) !== '') {
+                $warnings[] = 'Invalid ORCID omitted for creator "' . $name . '".';
             }
 
             $creators[] = $creator;
