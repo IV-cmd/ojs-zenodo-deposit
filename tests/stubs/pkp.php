@@ -49,6 +49,52 @@ namespace PKP\plugins {
     }
 }
 
+namespace PKP\core {
+    class DataObject
+    {
+        public function getData($key, $locale = null): mixed
+        {
+            return null;
+        }
+    }
+}
+
+namespace APP\submission {
+    class Submission extends \PKP\core\DataObject
+    {
+    }
+}
+
+namespace APP\publication {
+    class Publication extends \PKP\core\DataObject
+    {
+    }
+}
+
+namespace PKP\context {
+    class Context extends \PKP\core\DataObject
+    {
+    }
+}
+
+namespace PKP\author {
+    class Author extends \PKP\core\DataObject
+    {
+    }
+}
+
+namespace PKP\affiliation {
+    class Affiliation extends \PKP\core\DataObject
+    {
+    }
+}
+
+namespace PKP\doi {
+    class Doi extends \PKP\core\DataObject
+    {
+    }
+}
+
 namespace {
     function __($key = null, $replace = [], $locale = null): string|array|null
     {

@@ -19,6 +19,12 @@ class BoundaryTest extends TestCase
             new RecursiveDirectoryIterator($classesPath, FilesystemIterator::SKIP_DOTS)
         );
         $namespacePrefix = 'APP\\plugins\\generic\\zenodoDeposit\\';
+        $mapperImports = [
+            'APP\\publication\\Publication',
+            'APP\\submission\\Submission',
+            'PKP\\author\\Author',
+            'PKP\\context\\Context',
+        ];
 
         foreach ($files as $file) {
             if (!$file->isFile() || $file->getExtension() !== 'php') {
@@ -27,17 +33,32 @@ class BoundaryTest extends TestCase
 
             $source = file_get_contents($file->getPathname());
             self::assertIsString($source);
-            self::assertStringNotContainsString('use PKP\\', $source);
-            self::assertStringNotContainsString('use \\PKP\\', $source);
-            self::assertStringNotContainsString('\\PKP\\', $source);
             self::assertStringNotContainsString('__(', $source);
             self::assertStringNotContainsString("https://zenodo.org'", $source);
+            self::assertStringNotContainsString('error_log', $source);
 
-            preg_match_all('/^\s*use\s+(APP\\\\[^;]+);/m', $source, $matches);
+            foreach (['Application', 'PKPRequest', 'Repo', 'DAORegistry', 'Locale'] as $forbiddenName) {
+                self::assertDoesNotMatchRegularExpression(
+                    '/(?<![A-Za-z0-9_])' . preg_quote($forbiddenName, '/') . '(?![A-Za-z0-9_])/',
+                    $source
+                );
+            }
 
-            foreach ($matches[1] as $import) {
+            preg_match_all('/^\s*use\s+((?:APP|PKP)\\\\[^;]+);/m', $source, $matches);
+            $fileImports = $matches[1];
+
+            foreach ($fileImports as $import) {
+                if (in_array($import, $mapperImports, true)) {
+                    self::assertSame('DepositMapper.php', $file->getFilename());
+                    continue;
+                }
+
                 self::assertStringStartsWith($namespacePrefix, $import);
             }
+
+            $sourceWithoutImports = preg_replace('/^\s*use\s+[^;]+;\s*$/m', '', $source);
+            self::assertIsString($sourceWithoutImports);
+            self::assertStringNotContainsString('PKP\\', $sourceWithoutImports);
         }
 
         self::assertSame('mock', ZenodoConfig::DEFAULT_MODE);
