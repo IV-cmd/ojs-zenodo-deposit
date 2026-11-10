@@ -25,6 +25,7 @@ class BoundaryTest extends TestCase
             'PKP\\author\\Author',
             'PKP\\context\\Context',
         ];
+        $mapperImportsFound = [];
 
         foreach ($files as $file) {
             if (!$file->isFile() || $file->getExtension() !== 'php') {
@@ -37,12 +38,16 @@ class BoundaryTest extends TestCase
             self::assertStringNotContainsString("https://zenodo.org'", $source);
             self::assertStringNotContainsString('error_log', $source);
 
-            foreach (['Application', 'PKPRequest', 'Repo', 'DAORegistry', 'Locale'] as $forbiddenName) {
+            foreach (['Application', 'Request', 'PKPRequest', 'Repo', 'DAORegistry', 'Locale'] as $forbiddenName) {
                 self::assertDoesNotMatchRegularExpression(
                     '/(?<![A-Za-z0-9_])' . preg_quote($forbiddenName, '/') . '(?![A-Za-z0-9_])/',
                     $source
                 );
             }
+            self::assertDoesNotMatchRegularExpression(
+                '/->\s*(?:getLocalized\w*|getGalleys|getFile)\s*\(/',
+                $source
+            );
 
             preg_match_all('/^\s*use\s+((?:APP|PKP)\\\\[^;]+);/m', $source, $matches);
             $fileImports = $matches[1];
@@ -50,6 +55,7 @@ class BoundaryTest extends TestCase
             foreach ($fileImports as $import) {
                 if (in_array($import, $mapperImports, true)) {
                     self::assertSame('DepositMapper.php', $file->getFilename());
+                    $mapperImportsFound[] = $import;
                     continue;
                 }
 
@@ -61,6 +67,9 @@ class BoundaryTest extends TestCase
             self::assertStringNotContainsString('PKP\\', $sourceWithoutImports);
         }
 
+        sort($mapperImportsFound);
+        sort($mapperImports);
+        self::assertSame($mapperImports, $mapperImportsFound);
         self::assertSame('mock', ZenodoConfig::DEFAULT_MODE);
         self::assertSame('sandbox.zenodo.org', parse_url(ZenodoConfig::DEFAULT_BASE_URL, PHP_URL_HOST));
     }

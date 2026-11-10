@@ -52,9 +52,41 @@ namespace PKP\plugins {
 namespace PKP\core {
     class DataObject
     {
+        /** @var array<string, mixed> */
+        private array $data = [];
+
         public function getData($key, $locale = null): mixed
         {
-            return null;
+            if (!is_string($key)) {
+                return null;
+            }
+
+            $value = $this->data[$key] ?? null;
+
+            if ($locale !== null && is_array($value) && is_string($locale)) {
+                return $value[$locale] ?? null;
+            }
+
+            return $value;
+        }
+
+        public function setData($key, $value, $locale = null): void
+        {
+            if (!is_string($key)) {
+                return;
+            }
+
+            if ($locale !== null && is_string($locale)) {
+                if (!isset($this->data[$key]) || !is_array($this->data[$key])) {
+                    $this->data[$key] = [];
+                }
+
+                $this->data[$key][$locale] = $value;
+
+                return;
+            }
+
+            $this->data[$key] = $value;
         }
     }
 }
