@@ -14,8 +14,14 @@ final class DepositMapper
     /**
      * @param array<string, mixed> $options
      * @return array{
-     *     article: array{metadata: array<string, mixed>, files: array<mixed>},
-     *     dataset?: array{metadata: array<string, mixed>, files: array<mixed>},
+     *     article: array{
+     *         metadata: array<string, mixed>,
+     *         files: list<array{submissionFileId: int, name: string, path: string}>
+     *     },
+     *     dataset?: array{
+     *         metadata: array<string, mixed>,
+     *         files: list<array{submissionFileId: int, name: string, path: string}>
+     *     },
      *     warnings: list<string>
      * }
      */
@@ -292,7 +298,7 @@ final class DepositMapper
         $orcid = preg_replace('~^https?://orcid\.org/~i', '', trim($value));
         $orcid = rtrim($orcid ?? '', '/');
 
-        return preg_match('/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i', $orcid) === 1
+        return preg_match('/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/', $orcid) === 1
             ? $orcid
             : null;
     }
@@ -460,7 +466,10 @@ final class DepositMapper
 
     /**
      * @param array<string, mixed> $options
-     * @return array{article: list<array<string, mixed>>, dataset: list<array<string, mixed>>}
+     * @return array{
+     *     article: list<array{submissionFileId: int, name: string, path: string}>,
+     *     dataset: list<array{submissionFileId: int, name: string, path: string}>
+     * }
      */
     private function partitionFiles(array $options): array
     {
@@ -477,10 +486,24 @@ final class DepositMapper
                 continue;
             }
 
+            $submissionFileId = $file['submissionFileId'] ?? null;
+            $name = $file['name'] ?? null;
+            $path = $file['path'] ?? null;
+
+            if (!is_int($submissionFileId) || !is_string($name) || !is_string($path)) {
+                continue;
+            }
+
+            $reference = [
+                'submissionFileId' => $submissionFileId,
+                'name' => $name,
+                'path' => $path,
+            ];
+
             if (($file['isDataset'] ?? false) === true) {
-                $groups['dataset'][] = $file;
+                $groups['dataset'][] = $reference;
             } else {
-                $groups['article'][] = $file;
+                $groups['article'][] = $reference;
             }
         }
 

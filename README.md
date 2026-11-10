@@ -7,8 +7,10 @@ An OJS generic plugin skeleton for Zenodo integration.
 [![CI](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml/badge.svg)](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml)
 
 This version registers a generic plugin and includes a standalone Zenodo REST
-client with an offline mock. The client is not connected to OJS workflows; no
-OJS hooks, jobs, or metadata mapping are included.
+client, an offline mock, and a pure article-to-deposition mapper. These are not
+connected to OJS workflows; no hooks or queue jobs are included. See
+[the mapping notes](docs/mapping.md) for field rules, missing-field policies,
+warnings, and current omissions.
 
 ## OJS compatibility
 

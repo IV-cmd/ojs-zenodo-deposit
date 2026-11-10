@@ -34,6 +34,12 @@ the requested 422 behavior. Mock links use the reserved `.invalid` host.
 
 ## M2
 
+The mapper's fields and Zenodo rules were verified against the OJS 3.5.0.6
+schemas and Zenodo's documentation and license vocabulary on 2026-11-05.
+Omitting `license` lets Zenodo apply its own default; the article DOI is not
+duplicated in `related_identifiers`; the article-to-dataset back-link is
+deferred until the deposit step.
+
 ## M3
 
 ## M4

@@ -136,7 +136,7 @@ class DepositMapperTest extends TestCase
     public function testInvalidOrcidIsOmittedAndWarned(): void
     {
         $fixture = ArticleFixtures::create();
-        $fixture['publication']->getData('authors')[1]->setData('orcid', 'not-an-orcid');
+        $fixture['publication']->getData('authors')[1]->setData('orcid', '0000-0002-1694-233x');
 
         $result = $this->mapFixture($fixture);
 
@@ -186,15 +186,16 @@ class DepositMapperTest extends TestCase
             'submissionFileId' => 11,
             'name' => 'article.pdf',
             'path' => '/files/article.pdf',
-            'isDataset' => false,
         ];
         $datasetFile = [
             'submissionFileId' => 12,
             'name' => 'data.csv',
             'path' => '/files/data.csv',
-            'isDataset' => true,
         ];
-        $fixture['options']['files'] = [$articleFile, $datasetFile];
+        $fixture['options']['files'] = [
+            $articleFile + ['isDataset' => false],
+            $datasetFile + ['isDataset' => true],
+        ];
 
         $result = $this->mapFixture($fixture);
         $articleMetadata = $result['article']['metadata'];
