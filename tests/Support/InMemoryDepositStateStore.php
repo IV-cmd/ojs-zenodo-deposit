@@ -9,6 +9,8 @@ use APP\plugins\generic\zenodoDeposit\classes\DepositStateStore;
 
 final class InMemoryDepositStateStore implements DepositStateStore
 {
+    public bool $failNextDepositCheckpoint = false;
+
     /**
      * @var array<int, DepositState>
      */
@@ -21,6 +23,11 @@ final class InMemoryDepositStateStore implements DepositStateStore
 
     public function save(DepositState $state): void
     {
+        if ($this->failNextDepositCheckpoint && $state->depositionId !== null) {
+            $this->failNextDepositCheckpoint = false;
+            throw new \RuntimeException('Simulated state checkpoint failure.');
+        }
+
         $this->states[$state->publicationId] = $state;
     }
 

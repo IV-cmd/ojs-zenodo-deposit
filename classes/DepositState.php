@@ -75,7 +75,20 @@ final readonly class DepositState
 
     public function withDatasetDeposition(int $depositionId): self
     {
-        return $this->copy(datasetDepositionId: $depositionId, clearDatasetDoi: true);
+        return $this->copy(
+            status: self::STATUS_DEPOSITING,
+            datasetDepositionId: $depositionId,
+            clearDatasetDoi: true
+        );
+    }
+
+    public function withoutDatasetDeposition(): self
+    {
+        return $this->copy(
+            status: self::STATUS_PENDING,
+            clearDatasetDepositionId: true,
+            clearDatasetDoi: true
+        );
     }
 
     public function withDoi(string $doi): self
