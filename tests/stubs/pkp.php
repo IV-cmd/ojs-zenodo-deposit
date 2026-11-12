@@ -46,6 +46,31 @@ namespace PKP\plugins {
 
     abstract class GenericPlugin extends LazyLoadPlugin
     {
+        public function getEnabled(): bool
+        {
+            return true;
+        }
+    }
+
+    class Hook
+    {
+        /**
+         * @var array<string, list<callable>>
+         */
+        public static array $hooks = [];
+
+        public static function add(string $hookName, callable $callback, int $hookSequence = 256): void
+        {
+            self::$hooks[$hookName][] = $callback;
+        }
+
+        /**
+         * @return list<callable>
+         */
+        public static function callbacksFor(string $hookName): array
+        {
+            return self::$hooks[$hookName] ?? [];
+        }
     }
 }
 
@@ -88,6 +113,13 @@ namespace PKP\core {
 
             $this->data[$key] = $value;
         }
+
+        public function getId(): ?int
+        {
+            $id = $this->getData('id');
+
+            return is_int($id) ? $id : null;
+        }
     }
 }
 
@@ -95,17 +127,41 @@ namespace APP\submission {
     class Submission extends \PKP\core\DataObject
     {
     }
+
+    class Repository
+    {
+        public function get(int $submissionId): ?Submission
+        {
+            return null;
+        }
+    }
 }
 
 namespace APP\publication {
     class Publication extends \PKP\core\DataObject
     {
     }
+
+    class Repository
+    {
+        public function get(int $publicationId): ?Publication
+        {
+            return null;
+        }
+    }
 }
 
 namespace PKP\context {
     class Context extends \PKP\core\DataObject
     {
+    }
+
+    class ContextDAO
+    {
+        public function getById(int $contextId): ?Context
+        {
+            return null;
+        }
     }
 }
 
@@ -124,6 +180,218 @@ namespace PKP\affiliation {
 namespace PKP\doi {
     class Doi extends \PKP\core\DataObject
     {
+    }
+}
+
+namespace PKP\submissionFile {
+    class SubmissionFile extends \PKP\core\DataObject
+    {
+        public const SUBMISSION_FILE_DEPENDENT = 17;
+    }
+
+    class Collector
+    {
+        public function filterBySubmissionIds(?array $submissionIds): self
+        {
+            return $this;
+        }
+
+        public function filterByFileStages(?array $fileStages): self
+        {
+            return $this;
+        }
+
+        public function includeDependentFiles(bool $includeDependentFiles = true): self
+        {
+            return $this;
+        }
+
+        /**
+         * @return list<SubmissionFile>
+         */
+        public function getMany(): array
+        {
+            return [];
+        }
+    }
+}
+
+namespace APP\submissionFile {
+    class Repository
+    {
+        public function get(int $fileId, ?int $submissionId = null): ?\PKP\submissionFile\SubmissionFile
+        {
+            return null;
+        }
+
+        public function getCollector(): \PKP\submissionFile\Collector
+        {
+            return new \PKP\submissionFile\Collector();
+        }
+    }
+}
+
+namespace APP\galley {
+    class Galley extends \PKP\core\DataObject
+    {
+    }
+
+    class Collector
+    {
+        public function filterByPublicationIds(?array $publicationIds): self
+        {
+            return $this;
+        }
+
+        /**
+         * @return list<Galley>
+         */
+        public function getMany(): array
+        {
+            return [];
+        }
+    }
+
+    class Repository
+    {
+        public function getCollector(): Collector
+        {
+            return new Collector();
+        }
+    }
+}
+
+namespace APP\facades {
+    class Repo
+    {
+        public static function publication(): \APP\publication\Repository
+        {
+            return new \APP\publication\Repository();
+        }
+
+        public static function submission(): \APP\submission\Repository
+        {
+            return new \APP\submission\Repository();
+        }
+
+        public static function submissionFile(): \APP\submissionFile\Repository
+        {
+            return new \APP\submissionFile\Repository();
+        }
+
+        public static function galley(): \APP\galley\Repository
+        {
+            return new \APP\galley\Repository();
+        }
+    }
+}
+
+namespace APP\core {
+    class Application
+    {
+        public static function getContextDAO(): \PKP\context\ContextDAO
+        {
+            return new \PKP\context\ContextDAO();
+        }
+
+        public static function get(): self
+        {
+            return new self();
+        }
+
+        public function getRequest(): \PKP\core\Request
+        {
+            return new \PKP\core\Request();
+        }
+    }
+}
+
+namespace PKP\core {
+    class PKPApplication
+    {
+        public const ROUTE_PAGE = 1;
+    }
+
+    class Request
+    {
+        public function getDispatcher(): Dispatcher
+        {
+            return new Dispatcher();
+        }
+    }
+
+    class Dispatcher
+    {
+        public function url(mixed ...$arguments): string
+        {
+            return 'https://journal.example.test/article/view/1';
+        }
+    }
+}
+
+namespace PKP\file {
+    class PrivateFileManager
+    {
+        public function getBasePath(): string
+        {
+            return '';
+        }
+    }
+}
+
+namespace PKP\db {
+    class PluginSettingsDAO
+    {
+        public static array $settings = [];
+
+        public function getSetting(?int $contextId, string $pluginName, string $settingName): mixed
+        {
+            return null;
+        }
+
+        public function getPluginSettings(?int $contextId, string $pluginName): array
+        {
+            return self::$settings;
+        }
+    }
+
+    class DAORegistry
+    {
+        public static function getDAO(string $name): PluginSettingsDAO
+        {
+            return new PluginSettingsDAO();
+        }
+    }
+}
+
+namespace PKP\jobs {
+    abstract class BaseJob
+    {
+        public $tries = 3;
+
+        public int $backoff = 5;
+
+        public int $timeout = 60;
+
+        public int $maxExceptions = 3;
+
+        public function __construct()
+        {
+        }
+
+        /**
+         * @phpstan-impure
+         */
+        public static function dispatch(mixed ...$arguments): mixed
+        {
+            return null;
+        }
+
+        public function fail(?\Throwable $exception = null): void
+        {
+        }
+
+        abstract public function handle(): void;
     }
 }
 

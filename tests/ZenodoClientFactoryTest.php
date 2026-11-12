@@ -21,6 +21,22 @@ class ZenodoClientFactoryTest extends TestCase
         self::assertInstanceOf(MockZenodoClient::class, $client);
     }
 
+    public function testMockModeUsesConfiguredScenarioAndDelay(): void
+    {
+        $config = ZenodoConfig::fromArray([
+            'zenodo_mock_scenario' => MockZenodoClient::SCENARIO_VALIDATION_ERROR,
+            'zenodo_mock_step_delay' => '0',
+        ]);
+        $client = ZenodoClientFactory::make($config);
+
+        try {
+            $client->createDeposition([]);
+            self::fail('Expected the configured validation scenario.');
+        } catch (\APP\plugins\generic\zenodoDeposit\classes\ZenodoApiException $exception) {
+            self::assertSame(422, $exception->getStatusCode());
+        }
+    }
+
     public function testSandboxAndLiveModesCreateRestClientWithSuppliedTransport(): void
     {
         foreach ([ZenodoConfig::MODE_SANDBOX, ZenodoConfig::MODE_LIVE] as $mode) {

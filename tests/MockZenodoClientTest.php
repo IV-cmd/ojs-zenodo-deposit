@@ -45,6 +45,7 @@ class MockZenodoClientTest extends TestCase
         self::assertSame('md5:' . md5('file contents'), $file['checksum']);
         self::assertSame('application/octet-stream', $file['mimetype']);
         self::assertArrayHasKey('self', $file['links']);
+        self::assertSame('paper.pdf', $client->getDeposition(12345)['files'][0]['key']);
 
         $published = $client->publish(12345);
         self::assertSame('done', $published['state']);
