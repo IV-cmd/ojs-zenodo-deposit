@@ -13,4 +13,6 @@ interface ZenodoClientInterface
     public function publish(int $depositionId): array;
 
     public function getDeposition(int $depositionId): array;
+
+    public function listDepositions(array $query = []): array;
 }

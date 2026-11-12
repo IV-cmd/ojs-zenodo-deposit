@@ -6,6 +6,7 @@ namespace ZenodoDeposit\Tests;
 
 use APP\plugins\generic\zenodoDeposit\classes\ZenodoApiException;
 use APP\plugins\generic\zenodoDeposit\classes\ZenodoClient;
+use APP\plugins\generic\zenodoDeposit\classes\ZenodoConfigException;
 use APP\plugins\generic\zenodoDeposit\classes\http\HttpResponse;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -62,6 +63,54 @@ class ZenodoClientTest extends TestCase
 
         foreach ($transport->calls as $call) {
             $this->assertCommonHeaders($call);
+        }
+    }
+
+    public function testListDepositionsUsesAllowedQueryParameters(): void
+    {
+        $transport = new FakeTransport([
+            new HttpResponse(200, '[{"id":12345}]'),
+        ]);
+        $client = new ZenodoClient(self::BASE_URL . '/', self::TOKEN, $transport);
+
+        $depositions = $client->listDepositions([
+            'status' => 'draft',
+            'sort' => 'mostrecent',
+            'size' => 100,
+            'q' => 'article',
+        ]);
+
+        self::assertSame([['id' => 12345]], $depositions);
+        self::assertSame('GET', $transport->calls[0]['method']);
+        self::assertSame(
+            self::BASE_URL . '/api/deposit/depositions?status=draft&sort=mostrecent&size=100&q=article',
+            $transport->calls[0]['url']
+        );
+        self::assertSame('Bearer ' . self::TOKEN, $transport->calls[0]['headers']['Authorization']);
+        self::assertNull($transport->calls[0]['body']);
+    }
+
+    public function testListDepositionsRejectsUnsupportedQueryParameters(): void
+    {
+        $client = new ZenodoClient(self::BASE_URL, self::TOKEN, new FakeTransport());
+
+        $this->expectException(ZenodoConfigException::class);
+        $client->listDepositions(['unsafe' => 'query']);
+    }
+
+    public function testListDepositionsRejectsNonListJsonResponse(): void
+    {
+        $client = new ZenodoClient(
+            self::BASE_URL,
+            self::TOKEN,
+            new FakeTransport([new HttpResponse(200, '{"hits":[]}')])
+        );
+
+        try {
+            $client->listDepositions();
+            self::fail('Expected an invalid response exception.');
+        } catch (ZenodoApiException $exception) {
+            self::assertSame(200, $exception->getStatusCode());
         }
     }
 

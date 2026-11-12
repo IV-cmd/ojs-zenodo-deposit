@@ -70,6 +70,18 @@ class MockZenodoClientTest extends TestCase
         );
     }
 
+    public function testListDepositionsReturnsCreatedDraftAndEmptyForFreshClient(): void
+    {
+        $client = new MockZenodoClient();
+
+        self::assertSame([], $client->listDepositions(['status' => 'draft']));
+        $draft = $client->createDeposition(['title' => 'Example']);
+
+        self::assertSame([$draft], $client->listDepositions(['status' => 'draft']));
+        $client->publish(12345);
+        self::assertSame([], $client->listDepositions(['status' => 'draft']));
+    }
+
     public function testOutageScenarioReturns503ForEveryMethod(): void
     {
         $client = new MockZenodoClient(MockZenodoClient::SCENARIO_OUTAGE);

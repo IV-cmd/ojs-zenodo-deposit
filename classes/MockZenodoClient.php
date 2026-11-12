@@ -86,6 +86,28 @@ final class MockZenodoClient implements ZenodoClientInterface
         return $this->deposition;
     }
 
+    public function listDepositions(array $query = []): array
+    {
+        $this->assertScenario();
+        $allowedParameters = ['q', 'status', 'sort', 'page', 'size', 'all_versions'];
+
+        foreach (array_keys($query) as $parameter) {
+            if (!in_array($parameter, $allowedParameters, true)) {
+                throw new ZenodoConfigException('Unsupported Zenodo deposition list query parameter.');
+            }
+        }
+
+        if ($this->deposition === null) {
+            return [];
+        }
+
+        if (($query['status'] ?? null) === 'draft' && $this->deposition['submitted']) {
+            return [];
+        }
+
+        return [$this->deposition];
+    }
+
     private function makeDraft(array $metadata): array
     {
         $metadata['prereserve_doi'] = [

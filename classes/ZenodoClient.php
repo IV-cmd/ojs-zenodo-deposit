@@ -101,6 +101,37 @@ final class ZenodoClient implements ZenodoClientInterface
         return $this->request('GET', $path, $this->baseUrl . $path);
     }
 
+    public function listDepositions(array $query = []): array
+    {
+        $allowedParameters = ['q', 'status', 'sort', 'page', 'size', 'all_versions'];
+
+        foreach (array_keys($query) as $parameter) {
+            if (!in_array($parameter, $allowedParameters, true)) {
+                throw new ZenodoConfigException('Unsupported Zenodo deposition list query parameter.');
+            }
+        }
+
+        $path = self::API_PATH;
+        $queryString = http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        $url = $this->baseUrl . $path;
+
+        if ($queryString !== '') {
+            $url .= '?' . $queryString;
+        }
+
+        $depositions = $this->request('GET', $path, $url);
+
+        if (!array_is_list($depositions)) {
+            throw $this->exception(
+                'Zenodo API GET ' . $path . ' returned a non-array deposition list',
+                200,
+                json_encode($depositions) ?: ''
+            );
+        }
+
+        return $depositions;
+    }
+
     private function request(
         string $method,
         string $path,
