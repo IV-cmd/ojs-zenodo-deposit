@@ -6,11 +6,12 @@ An OJS generic plugin skeleton for Zenodo integration.
 
 [![CI](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml/badge.svg)](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml)
 
-This version registers a generic plugin and includes a standalone Zenodo REST
-client, an offline mock, and a pure article-to-deposition mapper. These are not
-connected to OJS workflows; no hooks or queue jobs are included. See
-[the mapping notes](docs/mapping.md) for field rules, missing-field policies,
-warnings, and current omissions.
+This version registers an OJS publish hook that queues a retryable deposit job,
+alongside a standalone Zenodo REST client, offline mock, and pure
+article-to-deposition mapper. The hook only queues work; it never calls Zenodo.
+See [the mapping notes](docs/mapping.md) for field rules, and
+[the deposit-flow notes](docs/deposit-flow.md) for queue, retry, and resume
+behavior.
 
 ## OJS compatibility
 
@@ -79,6 +80,8 @@ Configuration is code-level for now; a settings form is not included.
 | `zenodo_mode` | `mock` |
 | `zenodo_base_url` | `https://sandbox.zenodo.org` |
 | `zenodo_token` | Empty |
+| `zenodo_mock_scenario` | `success` |
+| `zenodo_mock_step_delay` | `0` seconds |
 
 To create a sandbox token, [register at Zenodo Sandbox](https://sandbox.zenodo.org)
 and use [Applications → personal access tokens](https://sandbox.zenodo.org/account/settings/applications/tokens/new/)
@@ -88,16 +91,26 @@ token are separate from their production counterparts.
 **Production `zenodo.org` is never the default, and sandbox mode refuses
 `zenodo.org` and `www.zenodo.org`.**
 
-The client fails fast with typed errors and never retries or sleeps; a future
-queued job will own backoff.
+The client fails fast with typed errors and never retries or sleeps; the
+queued job owns backoff.
+
+## Deposit flow
+
+The development stack includes a separate queue worker and disables OJS's
+built-in job runner so the publish request only enqueues the deposit. The
+context settings include mock scenario and step-delay controls for offline
+testing; there is no settings form yet. See
+[the deposit-flow guide](docs/deposit-flow.md) for the state machine, checkpoint
+and recovery behavior, retry rules, and queue caveats.
 
 ## Tests and static checks
 
 The offline unit tests run without an OJS checkout. Test-only stand-ins for the
-PKP plugin base class and translation helper are loaded by the test bootstrap.
-The tests cover plugin metadata, the standalone client, its HTTP transport,
-mock, factory, and configuration boundaries. Checks requiring the OJS
-application bootstrap are deferred to later work.
+PKP plugin and queue APIs and translation helper are loaded by the test
+bootstrap. The tests cover plugin metadata and hook registration, the standalone
+client, mapper, state store, deposit service, retry policy, and queue job
+settings. OJS-specific persistence and worker behavior also require the local
+container.
 
 Run the checks locally with PHP 8.2 or newer and Composer:
 

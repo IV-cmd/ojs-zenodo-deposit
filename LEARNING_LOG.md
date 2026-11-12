@@ -42,6 +42,26 @@ deferred until the deposit step.
 
 ## M3
 
+The first list-deposition test edit targeted an outdated method name; the test
+was inserted at the existing method instead. The initial state and service
+checks also caught a state-copy error that cleared `last_error`, PHPCS line
+length issues, and PHPStan types that were too narrow for runtime-validated
+file references; those were fixed before continuing.
+
+The inherited OJS `BaseJob::$backoff = 5` property takes precedence over a
+`backoff()` method when Laravel builds the queue payload. Unsetting the
+inherited property in the job constructor allows Laravel to use the configured
+schedule. The worker also retained a stale plugin-settings file cache after
+the setting was edited from the web container. The settings adapter now reads
+the context's settings from the database for each job; the queued-job behavior
+after this change still needs end-to-end verification.
+
+OJS's `job_runner` flushes output but, in this Apache mod_php image, cannot use
+`fastcgi_finish_request()`. It still processes jobs in the same PHP request
+process, so the development stack disables it and uses a separate worker.
+`retry_after` is 610 seconds, meaning a killed worker's reserved job must age
+out or be made available before another worker can resume it.
+
 ## M4
 
 ## M5
