@@ -18,10 +18,16 @@ final readonly class ZenodoConfig
 
     public const DEFAULT_TOKEN = '';
 
+    public const DEFAULT_MOCK_SCENARIO = MockZenodoClient::SCENARIO_SUCCESS;
+
+    public const DEFAULT_MOCK_STEP_DELAY = 0;
+
     private function __construct(
         public string $mode,
         public string $baseUrl,
-        #[\SensitiveParameter] public string $token
+        #[\SensitiveParameter] public string $token,
+        public string $mockScenario,
+        public int $mockStepDelay
     ) {
     }
 
@@ -30,6 +36,8 @@ final readonly class ZenodoConfig
         $mode = $settings['zenodo_mode'] ?? self::DEFAULT_MODE;
         $baseUrl = $settings['zenodo_base_url'] ?? self::DEFAULT_BASE_URL;
         $token = $settings['zenodo_token'] ?? self::DEFAULT_TOKEN;
+        $mockScenario = $settings['zenodo_mock_scenario'] ?? self::DEFAULT_MOCK_SCENARIO;
+        $mockStepDelay = $settings['zenodo_mock_step_delay'] ?? self::DEFAULT_MOCK_STEP_DELAY;
 
         $validModes = [
             self::MODE_MOCK,
@@ -60,6 +68,25 @@ final readonly class ZenodoConfig
             throw new ZenodoConfigException('Zenodo token must be a string.');
         }
 
-        return new self($mode, $baseUrl, $token);
+        if (
+            !is_string($mockScenario)
+            || !in_array($mockScenario, [
+                MockZenodoClient::SCENARIO_SUCCESS,
+                MockZenodoClient::SCENARIO_OUTAGE,
+                MockZenodoClient::SCENARIO_VALIDATION_ERROR,
+            ], true)
+        ) {
+            throw new ZenodoConfigException('Unknown Zenodo mock scenario.');
+        }
+
+        if (is_string($mockStepDelay) && ctype_digit($mockStepDelay)) {
+            $mockStepDelay = (int) $mockStepDelay;
+        }
+
+        if (!is_int($mockStepDelay) || $mockStepDelay < 0) {
+            throw new ZenodoConfigException('Zenodo mock step delay must be a non-negative integer.');
+        }
+
+        return new self($mode, $baseUrl, $token, $mockScenario, $mockStepDelay);
     }
 }

@@ -22,8 +22,10 @@ final class MockZenodoClient implements ZenodoClientInterface
 
     private ?array $deposition = null;
 
-    public function __construct(private string $scenario = self::SCENARIO_SUCCESS)
-    {
+    public function __construct(
+        private string $scenario = self::SCENARIO_SUCCESS,
+        private int $stepDelay = 0
+    ) {
         $knownScenarios = [
             self::SCENARIO_SUCCESS,
             self::SCENARIO_OUTAGE,
@@ -33,10 +35,15 @@ final class MockZenodoClient implements ZenodoClientInterface
         if (!in_array($scenario, $knownScenarios, true)) {
             throw new ZenodoConfigException('Unknown Zenodo mock scenario.');
         }
+
+        if ($stepDelay < 0) {
+            throw new ZenodoConfigException('Zenodo mock step delay must be a non-negative integer.');
+        }
     }
 
     public function createDeposition(array $metadata): array
     {
+        $this->delay();
         $this->assertScenario();
         $this->deposition = $this->makeDraft($metadata);
 
@@ -45,6 +52,7 @@ final class MockZenodoClient implements ZenodoClientInterface
 
     public function uploadFile(int $depositionId, string $filename, string $contents): array
     {
+        $this->delay();
         $this->assertScenario();
         $this->assertDepositionId($depositionId);
         $this->ensureDeposition();
@@ -59,11 +67,14 @@ final class MockZenodoClient implements ZenodoClientInterface
                     . '/files/' . rawurlencode($filename),
             ],
         ];
+        $this->deposition['files'][] = $file;
+
         return $file;
     }
 
     public function publish(int $depositionId): array
     {
+        $this->delay();
         $this->assertScenario();
         $this->assertDepositionId($depositionId);
         $this->ensureDeposition();
@@ -79,6 +90,7 @@ final class MockZenodoClient implements ZenodoClientInterface
 
     public function getDeposition(int $depositionId): array
     {
+        $this->delay();
         $this->assertScenario();
         $this->assertDepositionId($depositionId);
         $this->ensureDeposition();
@@ -88,6 +100,7 @@ final class MockZenodoClient implements ZenodoClientInterface
 
     public function listDepositions(array $query = []): array
     {
+        $this->delay();
         $this->assertScenario();
         $allowedParameters = ['q', 'status', 'sort', 'page', 'size', 'all_versions'];
 
@@ -125,6 +138,7 @@ final class MockZenodoClient implements ZenodoClientInterface
             'created' => self::FIXED_TIMESTAMP,
             'modified' => self::FIXED_TIMESTAMP,
             'owner' => 1,
+            'files' => [],
             'title' => is_string($metadata['title'] ?? null) ? $metadata['title'] : 'Mock deposition',
             'metadata' => $metadata,
             'links' => [
@@ -167,6 +181,13 @@ final class MockZenodoClient implements ZenodoClientInterface
             $body = '{"message":"Validation error","status":422,"errors":[{"field":"metadata.title",'
                 . '"message":"Title is required."}]}';
             throw new ZenodoApiException('Zenodo mock validation error.', 422, $body);
+        }
+    }
+
+    private function delay(): void
+    {
+        if ($this->stepDelay > 0) {
+            sleep($this->stepDelay);
         }
     }
 }

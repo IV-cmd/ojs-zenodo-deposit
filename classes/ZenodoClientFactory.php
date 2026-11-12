@@ -14,7 +14,7 @@ final class ZenodoClientFactory
         ?HttpTransport $transport = null
     ): ZenodoClientInterface {
         if ($config->mode === ZenodoConfig::MODE_MOCK) {
-            return new MockZenodoClient();
+            return new MockZenodoClient($config->mockScenario, $config->mockStepDelay);
         }
 
         if (!in_array($config->mode, [ZenodoConfig::MODE_SANDBOX, ZenodoConfig::MODE_LIVE], true)) {
