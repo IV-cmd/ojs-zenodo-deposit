@@ -99,15 +99,35 @@ needed.
 
 ## E2E verification status
 
-The required mock-only end-to-end scenarios are not yet fully verified. The
-publish/outage path has partial evidence for a successful publish response,
-an initial worker attempt, and the configured 30-second retry schedule. The
-queued retries continued to observe the previous mock scenario while the
-worker's local settings cache was stale; the settings adapter now reloads the
-context settings, but a queued retry after that change has not been verified.
-The successful-deposit/DOI, worker-kill recovery, and permanent validation
-error scenarios remain pending. Local evidence is kept under
-`~/notes/m3-evidence/` and is not committed.
+Verified against the dev OJS 3.5.0.6 stack on 2026-11-12 (mock mode only; no
+live Zenodo calls). Local evidence is kept under `~/notes/m3-evidence/` and is
+not committed.
+
+- Publish while Zenodo is down (scenario `outage`): the publish request
+  returned HTTP 200 in 92–207 ms and the article stayed published; the worker
+  logged attempts 1–4 spaced by the 30/60/120 s backoff, and the
+  `zenodo_deposits` rows recorded `failed` after 5 attempts
+  (`01-outage-*.log/txt`, `01-publish-timing.md`).
+- Successful deposit (scenario `success`): two publications reached `deposited`
+  with `deposition_id=12345` and `doi=10.5072/zenodo.12345`
+  (`02-success-db.txt`, worker logs).
+- Worker kill mid-job: a 20 s step delay was set and the worker was `kill -9`ed
+  after the "created article deposition id=12345" log line. State was
+  `depositing`/`deposition_id=12345`. Because a killed job's reservation only
+  expires after `retry_after` (610 s, hardcoded in `PKPContainer`), the test
+  moved `jobs.reserved_at`/`available_at` back by hand and restarted the
+  worker. The job resumed on attempt 2 using the stored id — exactly one
+  `created` log line across both runs — and reached `deposited`
+  (`03-kill-*.log/txt`). In production the same recovery happens automatically,
+  just up to 610 s later.
+- Permanent failure (scenario `validation_error`): the publish returned 200,
+  one attempt ran, `zenodo_deposits` shows `failed`/`attempts=1`, the job
+  landed in `failed_jobs`, and no retry was observed after 60 s
+  (`04-validation-*.log/txt`).
+
+Bug found and fixed during verification: worker processes read stale plugin
+settings through the DAO cache; the settings adapter now reloads context
+settings per job.
 
 ## Known limits
 
