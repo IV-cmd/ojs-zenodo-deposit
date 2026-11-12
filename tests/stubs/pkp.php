@@ -127,6 +127,124 @@ namespace PKP\doi {
     }
 }
 
+namespace Illuminate\Database\Migrations {
+    abstract class Migration
+    {
+        public function up(): void
+        {
+        }
+
+        public function down(): void
+        {
+        }
+    }
+}
+
+namespace Illuminate\Database\Schema {
+    class Blueprint
+    {
+        public function unsignedBigInteger(string $column): ColumnDefinition
+        {
+            return new ColumnDefinition();
+        }
+
+        public function unsignedInteger(string $column): ColumnDefinition
+        {
+            return new ColumnDefinition();
+        }
+
+        public function string(string $column, int $length = 255): ColumnDefinition
+        {
+            return new ColumnDefinition();
+        }
+
+        public function text(string $column): ColumnDefinition
+        {
+            return new ColumnDefinition();
+        }
+
+        public function timestamp(string $column): ColumnDefinition
+        {
+            return new ColumnDefinition();
+        }
+    }
+
+    class ColumnDefinition
+    {
+        public function primary(): self
+        {
+            return $this;
+        }
+
+        public function nullable(): self
+        {
+            return $this;
+        }
+
+        public function default(mixed $value): self
+        {
+            return $this;
+        }
+    }
+}
+
+namespace Illuminate\Database\Query {
+    class Builder
+    {
+        public function where(string $column, mixed $operator = null, mixed $value = null): self
+        {
+            return $this;
+        }
+
+        public function first(): ?object
+        {
+            return null;
+        }
+
+        /**
+         * @param array<string, mixed> $values
+         */
+        public function update(array $values): int
+        {
+            return 0;
+        }
+
+        /**
+         * @param array<string, mixed> $values
+         */
+        public function insertOrIgnore(array $values): int
+        {
+            return 0;
+        }
+    }
+}
+
+namespace Illuminate\Support\Facades {
+    class DB
+    {
+        public static function table(string $table): \Illuminate\Database\Query\Builder
+        {
+            return new \Illuminate\Database\Query\Builder();
+        }
+    }
+
+    class Schema
+    {
+        public static function hasTable(string $table): bool
+        {
+            return false;
+        }
+
+        public static function create(string $table, callable $callback): void
+        {
+        }
+
+        public static function dropIfExists(string $table): void
+        {
+        }
+    }
+}
+
 namespace {
     function __($key = null, $replace = [], $locale = null): string|array|null
     {

@@ -32,6 +32,10 @@ class BoundaryTest extends TestCase
                 continue;
             }
 
+            if (str_starts_with($file->getPathname(), $classesPath . '/ojs/')) {
+                continue;
+            }
+
             $source = file_get_contents($file->getPathname());
             self::assertIsString($source);
             self::assertStringNotContainsString('__(', $source);

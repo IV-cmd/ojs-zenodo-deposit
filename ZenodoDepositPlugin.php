@@ -8,6 +8,8 @@
 
 namespace APP\plugins\generic\zenodoDeposit;
 
+use APP\plugins\generic\zenodoDeposit\classes\ojs\ZenodoDepositSchemaMigration;
+use Illuminate\Database\Migrations\Migration;
 use PKP\plugins\GenericPlugin;
 
 class ZenodoDepositPlugin extends GenericPlugin
@@ -25,5 +27,10 @@ class ZenodoDepositPlugin extends GenericPlugin
     public function getDescription(): string
     {
         return __('plugins.generic.zenodoDeposit.description');
+    }
+
+    public function getInstallMigration(): ?Migration
+    {
+        return new ZenodoDepositSchemaMigration();
     }
 }
