@@ -18,6 +18,29 @@ services:
       - ./docker/ojs/start.sh:/opt/ojs-dev/start.sh:ro
     command: ["/bin/sh", "/opt/ojs-dev/start.sh"]
 
+  worker:
+    image: pkpofficial/ojs:3_5_0-6@sha256:0c26ece9e6af0c34961edfd2a187c5dc175ef5432b3d16d7c072de5d62d2c3f9
+    user: "0:0"
+    environment:
+      PKP_CONF: /var/www/ojs-config/config.inc.php
+    depends_on:
+      ojs:
+        condition: service_started
+    volumes:
+      - ojs_config:/var/www/ojs-config
+      - ojs_files:/var/www/files
+      - ojs_public:/var/www/html/public
+      - ./:/var/www/html/plugins/generic/zenodoDeposit
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        while [ ! -s /var/www/ojs-config/config.inc.php ]; do sleep 1; done
+        ln -sfn /var/www/ojs-config/config.inc.php /var/www/html/config.inc.php
+        exec php lib/pkp/tools/jobs.php work --sleep=3
+    restart: unless-stopped
+
   db:
     image: mysql:8.0
     environment:
