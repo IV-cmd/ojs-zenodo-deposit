@@ -16,3 +16,60 @@ msgstr "Zenodo Deposit"
 
 msgid "plugins.generic.zenodoDeposit.description"
 msgstr "Integration with Zenodo for depositing published content. Under development: this version does not deposit anything yet."
+
+msgid "plugins.generic.zenodoDeposit.settings.enabled"
+msgstr "Enable Zenodo deposits for this journal"
+
+msgid "plugins.generic.zenodoDeposit.settings.sandbox"
+msgstr "Use Zenodo sandbox (test deposits, DOI prefix 10.5072)"
+
+msgid "plugins.generic.zenodoDeposit.settings.depositDatasets"
+msgstr "Deposit attached datasets as a linked Zenodo record"
+
+msgid "plugins.generic.zenodoDeposit.settings.token"
+msgstr "Zenodo API token (deposit:write, deposit:actions). Leave blank to keep the stored token."
+
+msgid "plugins.generic.zenodoDeposit.settings.tokenConfigured"
+msgstr "API token: configured"
+
+msgid "plugins.generic.zenodoDeposit.settings.tokenNotConfigured"
+msgstr "API token: not configured"
+
+msgid "plugins.generic.zenodoDeposit.settings.tokenRequired"
+msgstr "An API token is required when deposits are enabled."
+
+msgid "plugins.generic.zenodoDeposit.settings.sandboxWarning"
+msgstr "Deposits are enabled but point at the Zenodo sandbox — records will be test records only."
+
+msgid "plugins.generic.zenodoDeposit.deposit.status"
+msgstr "Zenodo deposit"
+
+msgid "plugins.generic.zenodoDeposit.deposit.status.pending"
+msgstr "Queued for deposit"
+
+msgid "plugins.generic.zenodoDeposit.deposit.status.creating"
+msgstr "Creating deposition"
+
+msgid "plugins.generic.zenodoDeposit.deposit.status.depositing"
+msgstr "Deposit in progress"
+
+msgid "plugins.generic.zenodoDeposit.deposit.status.deposited"
+msgstr "Deposited to Zenodo"
+
+msgid "plugins.generic.zenodoDeposit.deposit.status.failed"
+msgstr "Deposit failed"
+
+msgid "plugins.generic.zenodoDeposit.deposit.record"
+msgstr "Zenodo record"
+
+msgid "plugins.generic.zenodoDeposit.deposit.lastError"
+msgstr "Last error"
+
+msgid "plugins.generic.zenodoDeposit.deposit.retry"
+msgstr "Retry deposit"
+
+msgid "plugins.generic.zenodoDeposit.deposit.retryQueued"
+msgstr "Deposit re-queued."
+
+msgid "plugins.generic.zenodoDeposit.deposit.retryNotAllowed"
+msgstr "Only a failed deposit can be retried."

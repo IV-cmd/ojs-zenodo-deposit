@@ -10,6 +10,9 @@ use PKP\db\DAORegistry;
 final class ZenodoPluginSettings
 {
     private const SETTING_NAMES = [
+        'zenodo_enabled',
+        'zenodo_sandbox',
+        'zenodo_deposit_datasets',
         'zenodo_mode',
         'zenodo_base_url',
         'zenodo_token',
