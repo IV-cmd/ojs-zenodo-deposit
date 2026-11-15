@@ -39,6 +39,27 @@ class DepositStateTest extends TestCase
         self::assertSame('temporary error', $state->lastError);
     }
 
+    public function testWithRetryResetsToPendingButKeepsDepositionIds(): void
+    {
+        $failed = new DepositState(
+            42,
+            7,
+            3,
+            DepositState::STATUS_FAILED,
+            depositionId: 12345,
+            attempts: 5,
+            lastError: 'Zenodo mock validation error.'
+        );
+
+        $retry = $failed->withRetry();
+
+        self::assertSame(DepositState::STATUS_PENDING, $retry->status);
+        self::assertSame(12345, $retry->depositionId);
+        self::assertSame(5, $retry->attempts);
+        self::assertNull($retry->lastError);
+        self::assertSame(DepositState::STATUS_FAILED, $failed->status);
+    }
+
     public function testRejectsUnknownState(): void
     {
         $this->expectException(\InvalidArgumentException::class);

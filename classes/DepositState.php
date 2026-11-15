@@ -101,6 +101,15 @@ final readonly class DepositState
         return $this->copy(datasetDoi: $doi);
     }
 
+    /**
+     * Manual retry (M4): back to pending while keeping stored deposition IDs —
+     * the service reuses them, so a retry can never create a duplicate.
+     */
+    public function withRetry(): self
+    {
+        return $this->copy(status: self::STATUS_PENDING, lastError: null, replaceLastError: true);
+    }
+
     public function withAttempt(int $attempts, ?string $lastError): self
     {
         return $this->copy(

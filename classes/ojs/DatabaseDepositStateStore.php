@@ -45,6 +45,42 @@ final class DatabaseDepositStateStore implements DepositStateStore
             $values['created_at'] = $now;
             DB::table(self::TABLE)->insertOrIgnore($values);
         }
+
+        $this->mirrorToPublication($state);
+    }
+
+    /**
+     * Project the state onto the publication's `zenodoDeposit` setting (M4)
+     * so it reaches the publication object and API responses. The
+     * zenodo_deposits table stays the source of truth; a mirror failure is
+     * logged, never thrown — deposit correctness must not depend on the UI.
+     */
+    private function mirrorToPublication(DepositState $state): void
+    {
+        try {
+            $publication = \APP\facades\Repo::publication()->get($state->publicationId);
+
+            if ($publication === null) {
+                return;
+            }
+
+            \APP\facades\Repo::publication()->edit($publication, [
+                'zenodoDeposit' => [
+                    'status' => $state->status,
+                    'depositionId' => $state->depositionId,
+                    'datasetDepositionId' => $state->datasetDepositionId,
+                    'doi' => $state->doi,
+                    'datasetDoi' => $state->datasetDoi,
+                    'attempts' => $state->attempts,
+                    'lastError' => $state->lastError,
+                ],
+            ]);
+        } catch (\Throwable $exception) {
+            error_log(
+                '[zenodoDeposit] publication_id=' . $state->publicationId
+                    . ' publication mirror failed (' . get_class($exception) . ')'
+            );
+        }
     }
 
     public function ensurePending(DepositState $state): void

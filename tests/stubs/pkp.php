@@ -46,9 +46,36 @@ namespace PKP\plugins {
 
     abstract class GenericPlugin extends LazyLoadPlugin
     {
+        public static array $settings = [];
+
         public function getEnabled(): bool
         {
             return true;
+        }
+
+        public function getSetting(int $contextId, string $name): mixed
+        {
+            return self::$settings[$contextId][$name] ?? null;
+        }
+
+        public function updateSetting(int $contextId, string $name, mixed $value): void
+        {
+            self::$settings[$contextId][$name] = $value;
+        }
+
+        public function getTemplateResource(string $name): string
+        {
+            return $name;
+        }
+
+        public function getActions($request, $actionArgs)
+        {
+            return [];
+        }
+
+        public function manage($args, $request)
+        {
+            return null;
         }
     }
 
@@ -147,6 +174,11 @@ namespace APP\publication {
         public function get(int $publicationId): ?Publication
         {
             return null;
+        }
+
+        public function edit(Publication $publication, array $params): Publication
+        {
+            return $publication;
         }
     }
 }
@@ -318,6 +350,35 @@ namespace PKP\core {
         {
             return new Dispatcher();
         }
+
+        public function getUser(): ?\PKP\user\User
+        {
+            return null;
+        }
+
+        public function getContext(): ?\PKP\context\Context
+        {
+            return null;
+        }
+
+        public function getRouter(): Dispatcher
+        {
+            return new Dispatcher();
+        }
+
+        public function getUserVar(string $name): mixed
+        {
+            return null;
+        }
+    }
+
+    class JSONMessage
+    {
+        public function __construct(
+            public bool $status,
+            public mixed $content = ''
+        ) {
+        }
     }
 
     class Dispatcher
@@ -325,6 +386,140 @@ namespace PKP\core {
         public function url(mixed ...$arguments): string
         {
             return 'https://journal.example.test/article/view/1';
+        }
+    }
+}
+
+namespace PKP\linkAction {
+
+    class LinkAction
+    {
+        public function __construct(mixed ...$args)
+        {
+        }
+    }
+}
+
+namespace PKP\linkAction\request {
+
+    class AjaxModal
+    {
+        public function __construct(mixed ...$args)
+        {
+        }
+    }
+}
+
+namespace PKP\security {
+
+    class Role
+    {
+        public const ROLE_ID_SITE_ADMIN = 1;
+        public const ROLE_ID_MANAGER = 16;
+    }
+}
+
+namespace PKP\user {
+
+    class User
+    {
+        public function hasRole(array $roleIds, ?int $contextId): bool
+        {
+            return false;
+        }
+    }
+}
+
+namespace PKP\form {
+
+    class Form
+    {
+        /** @var array<string, mixed> */
+        // phpcs:ignore -- mirrors PKP\form\Form::$\_data
+        protected array $_data = [];
+
+        public function __construct(string $template)
+        {
+        }
+
+        public function getData(string $key): mixed
+        {
+            return $this->_data[$key] ?? null;
+        }
+
+        public function readUserVars(array $vars): void
+        {
+        }
+
+        public function addCheck(mixed $check): void
+        {
+        }
+
+        public function validate(): bool
+        {
+            return true;
+        }
+
+        public function fetch($request, $template = null, $display = false)
+        {
+            return '';
+        }
+
+        public function execute(mixed ...$args): mixed
+        {
+            return null;
+        }
+    }
+}
+
+namespace PKP\form\validation {
+
+    class FormValidatorPost
+    {
+        public function __construct(mixed $form)
+        {
+        }
+    }
+
+    class FormValidatorCSRF
+    {
+        public function __construct(mixed $form)
+        {
+        }
+    }
+
+    class FormValidatorCustom
+    {
+        public function __construct(mixed ...$args)
+        {
+        }
+    }
+}
+
+namespace APP\template {
+
+    class TemplateManager
+    {
+        /** @var array<string, mixed> */
+        private array $vars = [];
+
+        public static function getManager(mixed $request): self
+        {
+            return new self();
+        }
+
+        public function getTemplateVars(string $name): mixed
+        {
+            return $this->vars[$name] ?? null;
+        }
+
+        public function assign(mixed $key, mixed $value = null): void
+        {
+        }
+
+        public function fetch(string $template): string
+        {
+            return '';
         }
     }
 }

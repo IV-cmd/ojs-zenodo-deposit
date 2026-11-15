@@ -7,3 +7,7 @@ parameters:
         - tests
     scanFiles:
         - tests/stubs/pkp.php
+    ignoreErrors:
+        -
+            message: '#has an unused parameter#'
+            path: tests/stubs/pkp.php
