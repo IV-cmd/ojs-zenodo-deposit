@@ -73,7 +73,9 @@ The standalone client supports three modes:
 - **Live** can create real Zenodo records and DOIs. Set `zenodo_base_url`
   explicitly to `https://zenodo.org` when using live mode.
 
-Configuration is code-level for now; a settings form is not included.
+Development-only keys (`zenodo_mode`, `zenodo_mock_scenario`,
+`zenodo_mock_step_delay`) remain code-level; the journal-facing settings live
+in the settings form described below.
 
 | Key | Default |
 | --- | --- |
@@ -99,9 +101,35 @@ queued job owns backoff.
 The development stack includes a separate queue worker and disables OJS's
 built-in job runner so the publish request only enqueues the deposit. The
 context settings include mock scenario and step-delay controls for offline
-testing; there is no settings form yet. See
+testing. See
 [the deposit-flow guide](docs/deposit-flow.md) for the state machine, checkpoint
 and recovery behavior, retry rules, and queue caveats.
+
+## Configuration
+
+Each journal configures deposits independently. A journal manager opens
+**Settings → Website → Plugins → Generic → Zenodo Deposit → Settings** (the
+`manage()` verb, so only managers and admins can reach it). The form offers:
+
+- **Enable Zenodo deposits for this journal** — master switch, default off. A
+  journal opts in deliberately; when off, the publish hook queues nothing.
+- **Use Zenodo sandbox** — default on. Derives `zenodo_mode`/`zenodo_base_url`
+  on save; an enabled+sandbox combination shows a warning that deposits will be
+  test records only.
+- **Deposit attached datasets** — default on; controls the linked
+  `upload_type: dataset` deposition.
+- **Zenodo API token** — write-only. The form shows "configured / not
+  configured", never the value; blank keeps the stored token. Enabling deposits
+  without a token fails validation.
+
+Editors see each article's deposit status and Zenodo DOI link in a **Zenodo
+deposit** block on the article page; managers additionally see the last error
+and a **Retry deposit** link on failed deposits. Retry re-queues the M3 job
+through the same idempotent path, so it cannot create a second deposition. The
+same state rides the publication API as the `zenodoDeposit` property.
+
+See [the configuration guide](docs/configuration.md) for the full field
+reference and token-handling rules.
 
 ## Tests and static checks
 
