@@ -144,6 +144,18 @@ same state rides the publication API as the `zenodoDeposit` property.
 See [the configuration guide](docs/configuration.md) for the full field
 reference and token-handling rules.
 
+| | |
+| --- | --- |
+| ![Zenodo Deposit enabled in the journal's plugin list](docs/images/plugin-list.png) | ![Per-journal settings form: enabled/sandbox/datasets toggles and write-only API token showing "configured"](docs/images/settings-form.png) |
+| Plugin enabled in the journal's plugin list | Per-journal settings form — the token shows "configured", never the value |
+| ![Article page badge after a successful deposit: status plus Zenodo DOI link](docs/images/article-badge-deposited.png) | ![Failed deposit as a manager sees it: last error and Retry deposit link](docs/images/article-badge-failed-retry.png) |
+| Deposited badge on the article page | Failed deposit as a manager sees it — error plus retry link |
+| ![Publication API response exposing the zenodoDeposit property](docs/images/api-zenodoDeposit-prop.png) | |
+| The `zenodoDeposit` property in the publication API | |
+
+(Screenshots from the dev environment in mock mode; the `10.5072/...` DOI is
+a test DOI.)
+
 ## Run modes
 
 - **Dev environment** — `make up`, or the reproducible installer

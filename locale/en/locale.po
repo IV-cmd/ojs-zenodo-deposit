@@ -15,7 +15,7 @@ msgid "plugins.generic.zenodoDeposit.displayName"
 msgstr "Zenodo Deposit"
 
 msgid "plugins.generic.zenodoDeposit.description"
-msgstr "Integration with Zenodo for depositing published content. Under development: this version does not deposit anything yet."
+msgstr "Deposits published articles and datasets to Zenodo and links the Zenodo DOI back to the article."
 
 msgid "plugins.generic.zenodoDeposit.settings.enabled"
 msgstr "Enable Zenodo deposits for this journal"
