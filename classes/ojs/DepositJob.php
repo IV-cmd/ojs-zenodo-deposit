@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace APP\plugins\generic\zenodoDeposit\classes\ojs;
 
 use APP\plugins\generic\zenodoDeposit\classes\DepositService;
+use APP\plugins\generic\zenodoDeposit\classes\DepositStateStore;
 use APP\plugins\generic\zenodoDeposit\classes\DepositState;
 use APP\plugins\generic\zenodoDeposit\classes\PermanentDepositException;
 use APP\plugins\generic\zenodoDeposit\classes\RetryPolicy;
@@ -13,7 +14,7 @@ use APP\plugins\generic\zenodoDeposit\classes\ZenodoConfig;
 use PKP\jobs\BaseJob;
 use Throwable;
 
-final class DepositJob extends BaseJob
+class DepositJob extends BaseJob
 {
     /** @var int */
     public $tries = RetryPolicy::MAX_ATTEMPTS;
@@ -37,7 +38,7 @@ final class DepositJob extends BaseJob
 
     public function handle(): void
     {
-        $store = new DatabaseDepositStateStore();
+        $store = $this->newStore();
         $token = '';
         $attempt = 1;
 
@@ -84,7 +85,7 @@ final class DepositJob extends BaseJob
 
     public function failed(Throwable $exception): void
     {
-        $store = new DatabaseDepositStateStore();
+        $store = $this->newStore();
         $token = '';
 
         try {
@@ -99,13 +100,13 @@ final class DepositJob extends BaseJob
     }
 
     private function recordFailure(
-        DatabaseDepositStateStore $store,
+        DepositStateStore $store,
         Throwable $exception,
         string $token,
         int $attempt,
         bool $permanent
     ): void {
-        $message = $this->safeError($exception, $token);
+        $message = self::safeError($exception, $token);
         $state = $store->get($this->publicationId);
 
         if ($state !== null) {
@@ -121,7 +122,12 @@ final class DepositJob extends BaseJob
         $this->logAttempt($attempt, $state?->depositionId, 'failed: ' . $message);
     }
 
-    private function safeError(Throwable $exception, string $token): string
+    protected function newStore(): DepositStateStore
+    {
+        return new DatabaseDepositStateStore();
+    }
+
+    public static function safeError(Throwable $exception, string $token): string
     {
         $message = $exception->getMessage();
 

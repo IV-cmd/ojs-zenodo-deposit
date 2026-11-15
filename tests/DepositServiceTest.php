@@ -141,6 +141,30 @@ class DepositServiceTest extends TestCase
         self::assertSame(DepositState::STATUS_DEPOSITED, $stateAfterRecovery->status);
     }
 
+    public function testManualRetryFromFailedResumesStoredDepositionWithoutCreatingAgain(): void
+    {
+        $store = $this->pendingStore();
+        $client = new RecordingZenodoClient();
+        $client->seedDeposition($this->articleMetadata());
+        $service = new DepositService($client, $store);
+
+        $failed = $store->get(42)
+            ->withArticleDeposition(12345)
+            ->withAttempt(5, 'Zenodo timed out.')
+            ->withStatus(DepositState::STATUS_FAILED);
+        $store->save($failed->withRetry());
+
+        $outcome = $service->run(42, $this->payload(), $this->fileReader());
+        $state = $store->get(42);
+
+        self::assertNotNull($state);
+        self::assertSame(DepositState::STATUS_DEPOSITED, $state->status);
+        self::assertSame('10.5072/zenodo.12345', $outcome->doi);
+        self::assertSame(0, $this->countCalls($client, 'createDeposition'));
+        self::assertSame(1, $this->countCalls($client, 'publish'));
+        self::assertNull($state->lastError);
+    }
+
     public function testAlreadyDepositedStateMakesNoClientCalls(): void
     {
         $store = new InMemoryDepositStateStore();
