@@ -150,8 +150,8 @@ reference and token-handling rules.
 | Plugin enabled in the journal's plugin list | Per-journal settings form — the token shows "configured", never the value |
 | ![Article page badge after a successful deposit: status plus Zenodo DOI link](docs/images/article-badge-deposited.png) | ![Failed deposit as a manager sees it: last error and Retry deposit link](docs/images/article-badge-failed-retry.png) |
 | Deposited badge on the article page | Failed deposit as a manager sees it — error plus retry link |
-| ![Publication API response exposing the zenodoDeposit property](docs/images/api-zenodoDeposit-prop.png) | |
-| The `zenodoDeposit` property in the publication API | |
+| ![OJS editor dashboard — the journal's editorial workspace the plugin runs inside](docs/images/editor-dashboard.png) | |
+| The editor dashboard — the OJS backend where published submissions are managed; deposits run in the background after publication | |
 
 (Screenshots from the dev environment in mock mode; the `10.5072/...` DOI is
 a test DOI.)
