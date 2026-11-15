@@ -149,7 +149,11 @@ make lint
 make analyse
 ```
 
-GitHub Actions runs the same checks on PHP 8.2 and 8.3.
+GitHub Actions runs the same checks on PHP 8.2 and 8.3, plus a Cypress
+end-to-end job that boots the Docker dev stack (`./cypress/setup-env.sh`),
+seeds a journal, and runs the specs in `cypress/e2e/` against the real OJS
+(publish → deposit → badge, outage → retry, settings secrecy). See
+[docs/testing.md](docs/testing.md).
 
 ## Plugin compatibility metadata
 
