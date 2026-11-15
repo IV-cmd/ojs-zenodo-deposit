@@ -215,7 +215,6 @@ for GitLab environments; GitHub Actions is the primary CI.
 ## Roadmap
 
 - Real sandbox validation with a live token.
-- Upstream contribution to `pkp` / the OJS plugin gallery.
 - Bake the plugin into the OJS image instead of the init-container copy.
 - Auto-seed plugin settings from the chart's env/secret at install time.
 
@@ -224,7 +223,3 @@ for GitLab environments; GitHub Actions is the primary CI.
 OJS plugin `version.xml` does not define an OJS-compatibility field.
 Compatibility information belongs in the plugin gallery's `plugins.xml`, not
 in this plugin's version metadata.
-
-## Authorship
-
-Code written by Devin (AI coding agent) to my specifications and reviewed by me.
