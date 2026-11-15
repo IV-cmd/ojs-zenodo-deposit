@@ -11,8 +11,9 @@ DB="$COMPOSE exec -T db mysql -u ojs -pojs_dev_password ojs"
 
 $COMPOSE up -d --wait
 
-# Wait for Apache.
+# Wait for Apache and MySQL (the mysql client can race the socket on fresh boots).
 until curl -sf -o /dev/null "$OJS_URL"; do sleep 2; done
+until $DB -e 'select 1' >/dev/null 2>&1; do sleep 2; done
 
 # Fresh volume -> run the CLI installer.
 if [ "$($DB -N -B -e 'select count(*) from information_schema.tables where table_schema="ojs" and table_name="users"' 2>/dev/null)" = "0" ]; then
