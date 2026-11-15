@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ojs-zenodo.name" . }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "ojs-zenodo.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- if .Values.plugin.enabled }}
+      initContainers:
+        - name: plugin
+          image: {{ .Values.plugin.image }}
+          command: ["sh", "-c", "cp -r /plugin/. /mnt/plugin/"]
+          volumeMounts:
+            - name: plugin-src
+              mountPath: /mnt/plugin
+      {{- end }}
+      containers:
+        - name: ojs
+          image: {{ .Values.ojs.image }}
+          command: ["/bin/sh", "/opt/ojs-dev/start.sh"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "ojs-zenodo.name" . }}
+          env:
+            - name: PKP_CONF
+              value: /var/www/ojs-config/config.inc.php
+            - name: ZENODO_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ojs-zenodo.name" . }}
+                  key: zenodo-token
+                  optional: true
+          ports:
+            - containerPort: {{ .Values.ojs.service.targetPort }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.ojs.service.targetPort }}
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.ojs.resources | nindent 12 }}
+          volumeMounts:
+            - name: start-script
+              mountPath: /opt/ojs-dev/start.sh
+              subPath: start.sh
+            - name: shared
+              mountPath: /var/www/ojs-config
+              subPath: config
+            - name: shared
+              mountPath: /var/www/files
+              subPath: files
+            - name: shared
+              mountPath: /var/www/html/public
+              subPath: public
+            - name: plugin-src
+              mountPath: /var/www/html/plugins/generic/zenodoDeposit
+      volumes:
+        - name: start-script
+          configMap:
+            name: {{ include "ojs-zenodo.name" . }}
+            items:
+              - key: start.sh
+                path: start.sh
+                mode: 0755
+        - name: shared
+          persistentVolumeClaim:
+            claimName: {{ include "ojs-zenodo.name" . }}-shared
+        - name: plugin-src
+          emptyDir: {}

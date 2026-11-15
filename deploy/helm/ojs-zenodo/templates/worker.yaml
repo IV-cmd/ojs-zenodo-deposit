@@ -1,0 +1,67 @@
+# OJS 3.x queues jobs on the Laravel queue (database driver). Deposits run on
+# this worker, never inside the web request — see docs/deposit-flow.md.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}-worker
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ojs-zenodo.name" . }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "ojs-zenodo.labels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- if .Values.plugin.enabled }}
+      initContainers:
+        - name: plugin
+          image: {{ .Values.plugin.image }}
+          command: ["sh", "-c", "cp -r /plugin/. /mnt/plugin/"]
+          volumeMounts:
+            - name: plugin-src
+              mountPath: /mnt/plugin
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ .Values.ojs.image }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              while [ ! -s /var/www/ojs-config/config.inc.php ]; do sleep 1; done
+              ln -sfn /var/www/ojs-config/config.inc.php /var/www/html/config.inc.php
+              exec php lib/pkp/tools/jobs.php work --sleep=3
+          envFrom:
+            - configMapRef:
+                name: {{ include "ojs-zenodo.name" . }}
+          env:
+            - name: PKP_CONF
+              value: /var/www/ojs-config/config.inc.php
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          volumeMounts:
+            - name: shared
+              mountPath: /var/www/ojs-config
+              subPath: config
+            - name: shared
+              mountPath: /var/www/files
+              subPath: files
+            - name: shared
+              mountPath: /var/www/html/public
+              subPath: public
+            - name: plugin-src
+              mountPath: /var/www/html/plugins/generic/zenodoDeposit
+      volumes:
+        - name: shared
+          persistentVolumeClaim:
+            claimName: {{ include "ojs-zenodo.name" . }}-shared
+        - name: plugin-src
+          emptyDir: {}

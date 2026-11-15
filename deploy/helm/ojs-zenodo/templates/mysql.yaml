@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}-mysql
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ojs-zenodo.name" . }}
+      app.kubernetes.io/component: mysql
+  template:
+    metadata:
+      labels:
+        {{- include "ojs-zenodo.labels" . | nindent 8 }}
+        app.kubernetes.io/component: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: {{ .Values.mysql.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "ojs-zenodo.name" . }}
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ojs-zenodo.name" . }}
+                  key: mysql-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ojs-zenodo.name" . }}
+                  key: mysql-password
+            - name: MYSQL_RANDOM_ROOT_PASSWORD
+              value: "yes"
+          ports:
+            - containerPort: 3306
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: data
+          {{- if .Values.mysql.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "ojs-zenodo.name" . }}-mysql
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}-mysql
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mysql
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app.kubernetes.io/name: {{ include "ojs-zenodo.name" . }}
+    app.kubernetes.io/component: mysql
+{{- if .Values.mysql.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}-mysql
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.mysql.persistence.size }}
+{{- end }}

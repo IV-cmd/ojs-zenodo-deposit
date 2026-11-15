@@ -1,0 +1,25 @@
+OJS with the Zenodo Deposit plugin is starting.
+
+1. Wait for the pods:
+     kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+2. Port-forward OJS:
+     kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "ojs-zenodo.name" . }} 8080:{{ .Values.ojs.service.port }}
+   Then open {{ .Values.ojs.baseUrl | default "http://localhost:8080" }}.
+
+3. On a fresh install, finish the OJS installer in the browser
+   (or run `php tools/install.php` in the web pod).
+
+4. Enable the plugin for your journal:
+   Settings > Website > Plugins > Zenodo Deposit > Enable, then Settings.
+   The plugin's authoritative config lives in OJS plugin_settings; the
+   ZENODO_* env vars only seed defaults. The Zenodo token is read from the
+   `zenodo-token` key of the {{ include "ojs-zenodo.name" . }} Secret — set it
+   there, never in values.yaml.
+
+Notes:
+- Image: pkpofficial/ojs (community image; there is no official OJS image).
+  Tested on OJS 3.5.0.6; the plugin targets 3.6.
+- The shared PVC must be ReadWriteMany — web and worker share OJS state.
+- Deposits run on the worker Deployment (Laravel queue worker), never in the
+  web request.

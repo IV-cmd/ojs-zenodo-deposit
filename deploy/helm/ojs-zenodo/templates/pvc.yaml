@@ -1,0 +1,16 @@
+# Shared OJS state (config file, uploads, public assets). The web pod writes
+# config.inc.php here and the worker reads it, so this must be ReadWriteMany.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}-shared
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteMany"]
+  {{- if .Values.ojs.storageClass }}
+  storageClassName: {{ .Values.ojs.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.ojs.storageSize | default "1Gi" }}

@@ -1,0 +1,62 @@
+# OJS container image. There is no official OJS image; this is the community
+# pkpofficial image pinned to OJS 3.5.0.6 (the plugin targets 3.6 but is
+# tested on 3.5.0.6).
+ojs:
+  image: pkpofficial/ojs:3_5_0-6
+  # Public URL OJS generates links for (written into config.inc.php).
+  baseUrl: http://localhost:8080
+  # OJS needs one ReadWriteMany volume shared by the web and worker pods
+  # (config file, uploads, public assets). Set storageClass per your cluster.
+  storageClass: ""
+  storageSize: 1Gi
+  service:
+    port: 8080
+    targetPort: 80
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+
+# Plugin source is delivered by an init container that copies a plugin image
+# into a shared volume mounted at plugins/generic/zenodoDeposit.
+# Build the plugin image with `deploy/plugin.Dockerfile`.
+plugin:
+  enabled: true
+  image: ghcr.io/iv-cmd/ojs-zenodo-deposit-plugin:main
+
+worker:
+  replicas: 1
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 512Mi
+
+mysql:
+  image: mysql:8.0
+  database: ojs
+  user: ojs
+  # storage: use a persistent volume in production
+  persistence:
+    enabled: false
+    size: 1Gi
+
+# Secrets — never real values in this file or in git. Create the Secret
+# yourself (see secrets.yaml comments) or pass via --set-file / external
+# secrets operator:
+#   mysqlPassword: database password
+#   zenodoToken:  Zenodo personal access token (deposit:write scope)
+secrets:
+  create: true
+  mysqlPassword: ""
+  zenodoToken: ""
+
+# Non-secret Zenodo configuration (the plugin's authoritative settings live in
+# OJS plugin_settings; these env vars seed the initial config — see NOTES.txt).
+zenodo:
+  mode: mock          # mock | sandbox | production
+  sandbox: true
+  enabled: false      # deposits are opt-in per journal

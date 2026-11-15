@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ojs-zenodo.name" . }}
+  labels:
+    {{- include "ojs-zenodo.labels" . | nindent 4 }}
+data:
+  MYSQL_DATABASE: {{ .Values.mysql.database | quote }}
+  MYSQL_USER: {{ .Values.mysql.user | quote }}
+  MYSQL_HOST: {{ include "ojs-zenodo.name" . }}-mysql
+  ZENODO_MODE: {{ .Values.zenodo.mode | quote }}
+  ZENODO_SANDBOX: {{ .Values.zenodo.sandbox | quote }}
+  ZENODO_ENABLED: {{ .Values.zenodo.enabled | quote }}
+  OJS_BASE_URL: {{ .Values.ojs.baseUrl | default "http://localhost:8080" | quote }}
+  start.sh: |
+    {{- .Files.Get "files/start.sh" | nindent 4 }}

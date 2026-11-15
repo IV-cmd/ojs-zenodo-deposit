@@ -1,17 +1,30 @@
 # OJS Zenodo Deposit
 
-An OJS generic plugin skeleton for Zenodo integration.
-
-**Status: early development**
+An OJS generic plugin that deposits published articles (and attached datasets)
+to Zenodo, links the Zenodo DOI back to the article, and survives Zenodo
+outages without blocking publication.
 
 [![CI](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml/badge.svg)](https://github.com/IV-cmd/ojs-zenodo-deposit/actions/workflows/ci.yml)
 
-This version registers an OJS publish hook that queues a retryable deposit job,
-alongside a standalone Zenodo REST client, offline mock, and pure
-article-to-deposition mapper. The hook only queues work; it never calls Zenodo.
-See [the mapping notes](docs/mapping.md) for field rules, and
-[the deposit-flow notes](docs/deposit-flow.md) for queue, retry, and resume
-behavior.
+## Architecture
+
+```mermaid
+flowchart LR
+    pub[Publication::publish hook] -->|enqueue only| queue[(jobs table)]
+    queue --> worker[DepositJob<br/>5 tries, 30/60/120/240s backoff]
+    worker --> store[(zenodo_deposits<br/>state table)]
+    worker --> client[ZenodoClient]
+    client --> zenodo[(Zenodo API)]
+    worker -->|doi + status| badge[Article-page badge<br/>+ zenodoDeposit API prop]
+    worker -.->|4xx or 5th failure| failed[failed state<br/>manager retry link]
+    failed -.->|manage verb=retry<br/>same idempotent path| queue
+```
+
+The hook only queues work; the worker owns retries. The deposition ID is
+written to `zenodo_deposits` immediately after `createDeposition()`, so a
+crash or retry resumes instead of creating a duplicate — see
+[the deposit-flow notes](docs/deposit-flow.md). Field rules live in
+[the mapping notes](docs/mapping.md).
 
 ## OJS compatibility
 
@@ -131,6 +144,28 @@ same state rides the publication API as the `zenodoDeposit` property.
 See [the configuration guide](docs/configuration.md) for the full field
 reference and token-handling rules.
 
+## Run modes
+
+- **Dev environment** — `make up`, or the reproducible installer
+  `./cypress/setup-env.sh` (also used by CI). Plugin in mock mode by default.
+- **Mock mode** — deterministic, no network, no Zenodo account needed.
+- **Sandbox mode** — real deposits to `sandbox.zenodo.org` with a personal
+  access token (`deposit:write` scope); see
+  [the configuration guide](docs/configuration.md).
+
+## Deployment (Kubernetes)
+
+`deploy/helm/ojs-zenodo/` is a chart that runs OJS (community
+`pkpofficial/ojs` image — there is no official one), a MySQL pod, and a
+queue-worker Deployment. The plugin is delivered by an init container that
+copies a plugin image built from `deploy/plugin.Dockerfile` — building the
+plugin into the OJS image instead is the documented alternative (roadmap).
+Secrets (DB password, Zenodo token) come only from a Secret.
+
+```sh
+helm install ojs deploy/helm/ojs-zenodo --set secrets.mysqlPassword=...
+```
+
 ## Tests and static checks
 
 The offline unit tests run without an OJS checkout. Test-only stand-ins for the
@@ -153,7 +188,24 @@ GitHub Actions runs the same checks on PHP 8.2 and 8.3, plus a Cypress
 end-to-end job that boots the Docker dev stack (`./cypress/setup-env.sh`),
 seeds a journal, and runs the specs in `cypress/e2e/` against the real OJS
 (publish → deposit → badge, outage → retry, settings secrecy). See
-[docs/testing.md](docs/testing.md).
+[docs/testing.md](docs/testing.md). `.gitlab-ci.yml` mirrors the same pipeline
+for GitLab environments; GitHub Actions is the primary CI.
+
+## Tested and limits
+
+- Developed and tested on **OJS 3.5.0.6** (official `pkpofficial` image);
+  targets OJS 3.6, which has no release yet — 3.6 compatibility is unverified.
+- No real `sandbox.zenodo.org` round-trip — that needs a live token.
+- Editors see deposit status on the article page; a workflow-SPA panel is not
+  possible on OJS 3.5 (the hook was removed).
+- DOI write-back is display-only; the article's own DOI is never overwritten.
+
+## Roadmap
+
+- Real sandbox validation with a live token.
+- Upstream contribution to `pkp` / the OJS plugin gallery.
+- Bake the plugin into the OJS image instead of the init-container copy.
+- Auto-seed plugin settings from the chart's env/secret at install time.
 
 ## Plugin compatibility metadata
 

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: ojs-zenodo
+description: OJS journal management system with the Zenodo Deposit plugin
+type: application
+version: 0.1.0
+# The community pkpofficial/ojs image (there is no official OJS image).
+appVersion: "3.5.0.6"
