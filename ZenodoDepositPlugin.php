@@ -19,6 +19,7 @@ use APP\plugins\generic\zenodoDeposit\classes\ojs\ZenodoDepositSettingsForm;
 use APP\plugins\generic\zenodoDeposit\classes\ojs\ZenodoPluginSettings;
 use APP\plugins\generic\zenodoDeposit\classes\ojs\ZenodoDepositSchemaMigration;
 use Illuminate\Database\Migrations\Migration;
+use APP\core\Application;
 use APP\publication\Publication;
 use APP\submission\Submission;
 use PKP\core\JSONMessage;
@@ -189,7 +190,15 @@ class ZenodoDepositPlugin extends GenericPlugin
 
         if (!isset($schema->properties->{'zenodoDeposit'})) {
             $schema->properties->{'zenodoDeposit'} = json_decode(
-                '{"type":"object","apiSummary":true,"validation":["nullable"]}'
+                '{"type":"object","apiSummary":true,"validation":["nullable"],"properties":{'
+                . '"status":{"type":"string"},'
+                . '"depositionId":{"type":"integer","validation":["nullable"]},'
+                . '"datasetDepositionId":{"type":"integer","validation":["nullable"]},'
+                . '"doi":{"type":"string","validation":["nullable"]},'
+                . '"datasetDoi":{"type":"string","validation":["nullable"]},'
+                . '"attempts":{"type":"integer"},'
+                . '"lastError":{"type":"string","validation":["nullable"]}'
+                . '}}'
             );
         }
 
@@ -204,8 +213,8 @@ class ZenodoDepositPlugin extends GenericPlugin
      */
     public function displayDepositBadge(string $hookName, array $args): bool
     {
-        $output = & $args[0];
         $templateMgr = $args[1] ?? null;
+        $output = & $args[2];
         $request = \APP\core\Application::get()->getRequest();
 
         $article = $templateMgr?->getTemplateVars('article');
@@ -243,10 +252,11 @@ class ZenodoDepositPlugin extends GenericPlugin
                     . '/records/' . str_replace('zenodo.', '', explode('/', $state->doi)[1] ?? $state->doi),
             'zenodoDepositError' => $isManager ? $state->lastError : null,
             'zenodoDepositRetryUrl' => $isManager && $state->status === DepositState::STATUS_FAILED
-                ? $request->getRouter()->url(
+                ? Application::get()->getDispatcher()->url(
                     $request,
+                    Application::ROUTE_COMPONENT,
                     null,
-                    null,
+                    'grid.settings.plugins.SettingsPluginGridHandler',
                     'manage',
                     null,
                     [

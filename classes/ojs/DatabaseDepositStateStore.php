@@ -54,27 +54,36 @@ final class DatabaseDepositStateStore implements DepositStateStore
      * so it reaches the publication object and API responses. The
      * zenodo_deposits table stays the source of truth; a mirror failure is
      * logged, never thrown — deposit correctness must not depend on the UI.
+     * Repo::publication()->edit() is not used: it requires a request user,
+     * which does not exist in the queue worker.
      */
     private function mirrorToPublication(DepositState $state): void
     {
         try {
-            $publication = \APP\facades\Repo::publication()->get($state->publicationId);
-
-            if ($publication === null) {
-                return;
-            }
-
-            \APP\facades\Repo::publication()->edit($publication, [
-                'zenodoDeposit' => [
-                    'status' => $state->status,
-                    'depositionId' => $state->depositionId,
-                    'datasetDepositionId' => $state->datasetDepositionId,
-                    'doi' => $state->doi,
-                    'datasetDoi' => $state->datasetDoi,
-                    'attempts' => $state->attempts,
-                    'lastError' => $state->lastError,
-                ],
+            $key = [
+                'publication_id' => $state->publicationId,
+                'locale' => '',
+                'setting_name' => 'zenodoDeposit',
+            ];
+            $value = json_encode([
+                'status' => $state->status,
+                'depositionId' => $state->depositionId,
+                'datasetDepositionId' => $state->datasetDepositionId,
+                'doi' => $state->doi,
+                'datasetDoi' => $state->datasetDoi,
+                'attempts' => $state->attempts,
+                'lastError' => $state->lastError,
             ]);
+
+            $query = DB::table('publication_settings')
+                ->where('publication_id', $key['publication_id'])
+                ->where('setting_name', $key['setting_name'])
+                ->where('locale', '');
+
+            if ($query->update(['setting_value' => $value]) === 0) {
+                DB::table('publication_settings')
+                    ->insertOrIgnore($key + ['setting_value' => $value]);
+            }
         } catch (\Throwable $exception) {
             error_log(
                 '[zenodoDeposit] publication_id=' . $state->publicationId

@@ -319,7 +319,7 @@ namespace APP\facades {
 }
 
 namespace APP\core {
-    class Application
+    class Application extends \PKP\core\PKPApplication
     {
         public static function getContextDAO(): \PKP\context\ContextDAO
         {
@@ -342,6 +342,17 @@ namespace PKP\core {
     class PKPApplication
     {
         public const ROUTE_PAGE = 1;
+        public const ROUTE_COMPONENT = 2;
+
+        public static function get(): self
+        {
+            return new self();
+        }
+
+        public function getDispatcher(): Dispatcher
+        {
+            return new Dispatcher();
+        }
     }
 
     class Request
